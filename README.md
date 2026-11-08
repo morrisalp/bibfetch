@@ -140,4 +140,10 @@ Known issues from the first real run (CallCleaner, 48 entries, Nov 2026):
   order, consortium authors.
 - **`--max-authors N`:** full list up to N, `and others` beyond (for IEEEbib-style
   papers, without losing full lists elsewhere).
+- **Rendered review diff (`--review`):** after `--tidy`, build the paper before/after
+  and write an HTML page comparing the *rendered* references (`.bbl`, as the PDF
+  shows them), one card per changed entry with word-level red/green highlights,
+  LaTeX converted to readable text. Prototype from the CallCleaner pass (Nov 2026):
+  diff two `.bbl` files with `difflib` on word tokens. Should be the default way to
+  review a tidy pass: the raw `.bib` diff is too noisy.
 
