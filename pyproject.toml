@@ -1,0 +1,19 @@
+[project]
+name = "bibfetch"
+version = "0.1.0"
+description = "BibTeX from registries (Crossref, DBLP, arXiv), never from memory"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Morris Alper" }]
+dependencies = []
+
+[project.scripts]
+bibfetch = "bibfetch.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest>=8"]

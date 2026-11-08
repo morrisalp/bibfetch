@@ -1,0 +1,87 @@
+# bibfetch
+
+BibTeX from registries — Crossref, DBLP, arXiv — never typed from memory.
+
+Every entry `bibfetch` prints is built from one registry record. Authors,
+titles, venues, pages and DOIs are copied from that record; the tool only
+*formats* them (LaTeX accents, braces around acronyms, `--` page ranges,
+short conference names). A `bibsource` field (ignored by bibliography styles)
+records where each entry came from, so it's easy to tell fetched entries from
+hand-typed or LLM-written ones.
+
+It also prefers **published versions over arXiv**: give it an arXiv ID and it
+returns the conference/journal version if one exists.
+
+No dependencies beyond the Python standard library.
+
+## Install
+
+```sh
+uv tool install git+https://github.com/morrisalp/bibfetch
+# or, from a clone:  uv tool install .
+```
+
+## Usage
+
+```sh
+bibfetch "AST: Audio Spectrogram Transformer"   # by title
+bibfetch 2104.01778                              # arXiv id or URL -> published version if any
+bibfetch 10.21437/Interspeech.2021-698          # DOI
+bibfetch --key gong2021ast 2104.01778           # choose the citation key
+bibfetch "Some common title" --author Smith     # disambiguate by first author
+```
+
+Status messages go to stderr; BibTeX goes to stdout, so
+`bibfetch ... >> refs.bib` works.
+
+### Checking an existing `.bib`
+
+```sh
+bibfetch --check refs.bib            # preprint entries that now have published versions
+bibfetch --check refs.bib -o new.bib # write the replacements (same keys) to new.bib
+bibfetch --check refs.bib --verify   # look up *every* entry; flag ones found nowhere
+```
+
+`--check` never modifies your file. Replacement entries keep your existing
+citation keys, so you can paste them over the old ones without touching the
+`.tex`. `--verify` is a cheap guard against invented references: an entry
+whose title matches nothing in Crossref, DBLP or arXiv deserves a manual look
+(it may also just be a book, a website, or a very new paper).
+
+### Options
+
+| Flag | Effect |
+|---|---|
+| `--keep-preprint` | don't swap arXiv/bioRxiv entries for published versions |
+| `--long-venues` | keep full proceedings names instead of `Proc. Interspeech` etc. |
+| `--author NAME` | require this first-author family name in title searches |
+| `--delay SEC` | pause between lookups in `--check` (default 1s) |
+
+Set `BIBFETCH_MAILTO=you@example.org` to use Crossref's "polite pool"
+(optional; nothing is sent otherwise beyond a generic User-Agent).
+
+## How it decides
+
+1. **DOI** → Crossref record. If it's a preprint DOI (arXiv, bioRxiv, …), it
+   looks for a published version by title + first author.
+2. **arXiv ID** → arXiv API for title/authors → published DOI listed on arXiv,
+   else Crossref + DBLP title search → else the arXiv entry
+   (`journal = {arXiv preprint arXiv:XXXX.XXXXX}`).
+3. **Title** → Crossref + DBLP, keeping only near-exact title matches
+   (similarity ≥ 0.93) → published version preferred → else arXiv → else it
+   fails loudly rather than guessing.
+
+DBLP records with a DOI are re-fetched from Crossref (fuller venue names);
+DBLP-only records (e.g. ICLR/NeurIPS papers without DOIs) are used directly.
+
+## Limitations
+
+- **Proper nouns** in titles ("Haitian", "Python") aren't braced
+  automatically — only acronyms and mixed-case words are. Add braces by hand
+  where a style would lowercase a name.
+- DBLP sometimes answers automated requests with a bot check; bibfetch then
+  warns and carries on with Crossref + arXiv.
+- Registries can lag a few months behind new proceedings; re-check recent
+  preprints before camera-ready.
+- Short venue names cover common NLP/speech/ML/vision conferences (see
+  `_VENUES` in `bibtex.py`); anything else keeps the registry's name.
