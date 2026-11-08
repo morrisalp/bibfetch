@@ -77,7 +77,8 @@ def write_review(before_bbl: str, after_bbl: str, out_html: str, title: str = "B
     section.ok{{border-left-color:var(--acc)}} section.note{{border-left-color:var(--chg)}}
     .head{{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}}
     h2{{font-size:14px;margin:0;color:var(--muted);font-weight:600}} code{{font-size:13px}}
-    .choice{{display:flex;gap:14px;font-size:13px}} .choice label{{cursor:pointer}}
+    .choice{{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;cursor:pointer;padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}}
+    .choice input{{width:22px;height:22px;margin:0;cursor:pointer;accent-color:var(--acc)}}
     .row{{display:flex;gap:10px;align-items:baseline}} .row p{{margin:4px 0}}
     .tag{{flex:0 0 52px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}}
     del{{background:var(--del);color:var(--delfg);text-decoration:line-through;border-radius:3px;padding:0 2px}}
