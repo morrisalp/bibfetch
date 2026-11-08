@@ -48,6 +48,35 @@ citation keys, so you can paste them over the old ones without touching the
 whose title matches nothing in Crossref, DBLP or arXiv deserves a manual look
 (it may also just be a book, a website, or a very new paper).
 
+### Tidying a whole `.bib` (end-of-paper pass)
+
+```sh
+bibfetch --tidy refs.bib -o refs.tidy.bib
+git diff --no-index refs.bib refs.tidy.bib    # review, then copy over
+```
+
+Every entry is re-fetched (by DOI if it has one, else arXiv ID or title +
+first author), keeping your keys and order. Preprints become their published
+versions. Entries no registry confirms (books, standards, software, websites)
+get **formatting-only** cleanup: acronyms braced, accents, page ranges, short
+conference names. Nothing new is invented for them.
+
+Safety checks before a fetched record replaces yours: titles must be ≥0.8
+similar *and* contain the same numbers (so *DNSMOS* ≠ *DNSMOS P.835*), the
+first author must match, a `@book` is never replaced by a non-book (e.g. a
+book review with the same title), and years can't differ by more than one
+(except preprint → published).
+
+Where the registry's formatting is *worse* than yours, the better spelling of
+the same name/word is kept: full given names over initials ("Gray, Augustine"
+over "Gray, A."), accents ("Cappé" over "Cappe"), your particle split ("Le
+Roux, Jonathan" over "Roux, Jonathan Le"), and your internal capitals
+("WaveGAN" over "Wavegan"). Registry capitalization fixes still apply
+("Mcewen" → "McEwen").
+
+Journal years follow the registry's print date, which can be a year later
+than the online date Google Scholar shows.
+
 ### Options
 
 | Flag | Effect |

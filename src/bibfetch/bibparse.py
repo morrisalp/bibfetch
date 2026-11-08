@@ -75,11 +75,42 @@ def arxiv_id(item: BibItem) -> str | None:
     return None
 
 
+def latex_to_plain(s: str) -> str:
+    """Rough LaTeX -> plain text for searching: {\\'e} -> e, \\& -> &, braces dropped."""
+    s = re.sub(r"\\[`'^\"~=.uvHckrb]\s*(?=[{A-Za-z])", "", s)  # accent commands
+    s = re.sub(r"\\(ss|ae|oe|o|l|i|AE|OE|O|L)\b", lambda m: {"ss": "ss", "ae": "ae", "oe": "oe", "o": "o", "l": "l", "i": "i",
+                                                         "AE": "AE", "OE": "OE", "O": "O", "L": "L"}[m.group(1)], s)
+    s = re.sub(r"\\([&%#_$])", r"\1", s)
+    return re.sub(r"[{}]", "", s)
+
+
 def first_author_family(item: BibItem) -> str:
-    a = item.fields.get("author", "").split(" and ")[0].strip()
-    a = re.sub(r"[{}]", "", a)
+    a = latex_to_plain(item.fields.get("author", "").split(" and ")[0].strip())
     return a.split(",")[0].strip() if "," in a else a.rsplit(" ", 1)[-1]
 
 
 def plain_title(item: BibItem) -> str:
-    return re.sub(r"[{}]", "", item.fields.get("title", ""))
+    return latex_to_plain(item.fields.get("title", ""))
+
+
+def local_tidy(item: BibItem):
+    """Formatting-only cleanup of an entry no registry could confirm.
+
+    Never adds or changes content: braces acronyms in the title, converts
+    accented characters, tidies page ranges, shortens known conference names
+    (which also removes Scholar's doubled years). Journal names and author
+    spellings are left as they are.
+    """
+    from .bibtex import Entry, drop_year_prefix, protect_title, short_venue, tidy_pages, to_latex
+
+    f = dict(item.fields)
+    if "title" in f:
+        f["title"] = protect_title(to_latex(f["title"], escape_specials=False))
+    for k in ("author", "editor", "journal", "publisher"):
+        if k in f:
+            f[k] = to_latex(f[k], escape_specials=False)
+    if "booktitle" in f:
+        f["booktitle"] = short_venue(f["booktitle"]) or to_latex(drop_year_prefix(f["booktitle"]), escape_specials=False)
+    if "pages" in f:
+        f["pages"] = tidy_pages(f["pages"])
+    return Entry(item.type, item.key, f, published=not is_preprint(item))

@@ -52,10 +52,20 @@ _SPECIAL_CHARS = {
 }
 
 
-def to_latex(s: str) -> str:
-    """Unicode -> pdflatex-safe text (accents as {\\'e}, specials escaped)."""
+_ASCII_SPECIALS = set("&%#_")
+
+
+def to_latex(s: str, escape_specials: bool = True) -> str:
+    """Unicode -> pdflatex-safe text (accents as {\\'e}, specials escaped).
+
+    escape_specials=False is for text that is already LaTeX (an existing .bib
+    field), where & % # _ are presumably escaped already.
+    """
     out = []
     for ch in unicodedata.normalize("NFC", s):
+        if ch in _ASCII_SPECIALS and not escape_specials:
+            out.append(ch)
+            continue
         if ch in _SPECIAL_CHARS:
             out.append(_SPECIAL_CHARS[ch])
             continue
@@ -114,7 +124,7 @@ def protect_title(title: str) -> str:
 # (pattern, short name). Matched case-insensitively against the source's
 # venue string (Crossref container-title or DBLP venue). Order matters.
 _VENUES = [
-    (r"\bICASSP\b|Acoustics,? Speech,? and Signal Processing \(ICASSP", "Proc. IEEE ICASSP"),
+    (r"\bICASSP\b|International Conference on Acoustics,? Speech,? and Signal Processing", "Proc. IEEE ICASSP"),
     (r"^INTERSPEECH\b|^Interspeech \d{4}|^Proc\.? Interspeech", "Proc. Interspeech"),
     (r"\bWASPAA\b|Applications of Signal Processing to Audio and Acoustics", "Proc. IEEE WASPAA"),
     (r"\bEUSIPCO\b|European Signal Processing Conference", "Proc. EUSIPCO"),
@@ -195,6 +205,12 @@ def norm_title(t: str) -> str:
     t = re.sub(r"[{}\\]", "", t)
     t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower()
     return " ".join(re.findall(r"[a-z0-9]+", t))
+
+
+def same_numbers(a: str, b: str) -> bool:
+    """'DNSMOS P.835: ...' vs 'DNSMOS: ...' are different papers despite ~0.96
+    similarity; so are 'X v2' vs 'X v3'. Numbers in titles must agree."""
+    return re.findall(r"\d+", norm_title(a)) == re.findall(r"\d+", norm_title(b))
 
 
 def title_similarity(a: str, b: str) -> float:

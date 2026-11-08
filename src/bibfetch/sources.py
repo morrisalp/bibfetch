@@ -55,6 +55,11 @@ def _get(url: str, accept: str = "application/json", tries: int = 3) -> bytes:
             raise SourceUnavailable(f"{urllib.parse.urlparse(url).netloc}: HTTP {e.code}") from e
         except urllib.error.URLError as e:
             raise SourceUnavailable(f"{urllib.parse.urlparse(url).netloc}: {e.reason}") from e
+        except (TimeoutError, ConnectionError, OSError) as e:
+            if attempt < tries - 1:
+                time.sleep(2)
+                continue
+            raise SourceUnavailable(f"{urllib.parse.urlparse(url).netloc}: {e}") from e
     raise SourceUnavailable(url)
 
 
@@ -119,11 +124,15 @@ def _cr_url(path: str = "", **params: str) -> str:
 
 
 def _cr_year(m: dict) -> str:
-    for k in ("published-print", "published-online", "issued", "published", "created"):
+    """Publication year. Never Crossref's 'created'/'deposited' dates: for old
+    IEEE proceedings those are the digitization date (e.g. 2005 for ICASSP '79).
+    Falls back to a year encoded in the DOI (10.1109/icassp.1979.1170788), else ''."""
+    for k in ("published-print", "published-online", "issued"):
         parts = (m.get(k) or {}).get("date-parts") or [[None]]
         if parts and parts[0] and parts[0][0]:
             return str(parts[0][0])
-    return ""
+    y = re.search(r"\.((?:19|20)\d{2})\.", m.get("DOI", ""))
+    return y.group(1) if y else ""
 
 
 def _cr_first(m: dict, key: str) -> str:
@@ -131,8 +140,11 @@ def _cr_first(m: dict, key: str) -> str:
     return clean_whitespace(strip_html(v[0])) if v else ""
 
 
-def crossref_search(title: str, rows: int = 10) -> list[Candidate]:
-    d = _get_json(_cr_url(rows=str(rows), **{"query.bibliographic": title}))
+def crossref_search(title: str, rows: int = 10, author: str = "") -> list[Candidate]:
+    params = {"rows": str(rows), "query.bibliographic": title}
+    if author:  # short/generic titles ("Segment anything") need the author to surface
+        params["query.author"] = author
+    d = _get_json(_cr_url(**params))
     out = []
     for m in d["message"]["items"]:
         t = _cr_first(m, "title")

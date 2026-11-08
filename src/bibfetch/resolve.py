@@ -6,7 +6,7 @@ import re
 import urllib.error
 from dataclasses import dataclass, field
 
-from .bibtex import Entry, ascii_slug, title_similarity
+from .bibtex import Entry, ascii_slug, same_numbers, title_similarity
 from .sources import (
     ARXIV_ID, Candidate, SourceUnavailable, arxiv_by_id, arxiv_search, crossref_by_doi,
     crossref_search, dblp_search, entry_from_arxiv, entry_from_crossref, entry_from_dblp,
@@ -38,20 +38,32 @@ def classify(q: str) -> tuple[str, str]:
 
 
 def _same_author(a: str, b: str) -> bool:
-    return bool(a and b) and ascii_slug(a) == ascii_slug(b)
+    """Family-name match, tolerant of particles split differently across
+    registries ('Le Roux' vs. Crossref's 'Roux', given 'Jonathan Le')."""
+    if not (a and b):
+        return False
+    if ascii_slug(a) == ascii_slug(b):
+        return True
+    return ascii_slug(a.split()[-1]) == ascii_slug(b.split()[-1])
 
 
 def find_candidates(title: str, first_author: str = "") -> list[Candidate]:
     """Title search across Crossref + DBLP; keep near-exact title matches."""
     cands: list[Candidate] = []
-    for name, fn in (("Crossref", crossref_search), ("DBLP", dblp_search)):
+    # Crossref twice: plain title search, plus title+author (short/generic titles
+    # like "Segment anything" only surface with the author; but author search
+    # is accent-sensitive, e.g. arXiv's "Defossez" misses Crossref's "Défossez").
+    searches = [("Crossref", crossref_search), ("DBLP", dblp_search)]
+    if first_author:
+        searches.insert(1, ("Crossref", lambda t: crossref_search(t, author=first_author)))
+    for name, fn in searches:
         try:
             cands += fn(title)
         except SourceUnavailable as e:
             log(f"  ! {name} unavailable: {e}")
-    good = [c for c in cands if title_similarity(c.title, title) >= TITLE_MATCH]
+    good = [c for c in cands if title_similarity(c.title, title) >= TITLE_MATCH and same_numbers(c.title, title)]
     if first_author:
-        good = [c for c in good if _same_author(c.first_author, first_author) or not c.first_author]
+        good = [c for c in good if _same_author(c.first_author, first_author)]
     return good
 
 
@@ -126,7 +138,7 @@ def resolve(query: str, prefer_published: bool = True, long_venues: bool = False
     if pub:
         return Result(_entry_from_candidate(pub, long_venues), alternatives=[c for c in cands if c is not pub])
     try:
-        ax = [c for c in arxiv_search(val) if title_similarity(c.title, val) >= TITLE_MATCH]
+        ax = [c for c in arxiv_search(val) if title_similarity(c.title, val) >= TITLE_MATCH and same_numbers(c.title, val)]
     except SourceUnavailable as e:
         log(f"  ! arXiv unavailable: {e}")
         ax = []
