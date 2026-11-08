@@ -146,4 +146,8 @@ Known issues from the first real run (CallCleaner, 48 entries, Nov 2026):
   LaTeX converted to readable text. Prototype from the CallCleaner pass (Nov 2026):
   diff two `.bbl` files with `difflib` on word tokens. Should be the default way to
   review a tidy pass: the raw `.bib` diff is too noisy.
+  Each card has Accept / Reject / Change… plus a comment box (saved in the
+  browser), and a **Copy feedback** button that exports `key: CHOICE — comment`
+  lines to paste back to the assistant, which then applies them. Working
+  prototype: `prototypes/bbl_review.py BEFORE.bbl AFTER.bbl OUT.html [title]`.
 
