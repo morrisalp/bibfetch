@@ -87,8 +87,8 @@ open review.html
 ```
 
 One card per changed reference, as the PDF prints it, with word-level
-red/green highlights. Mark each **Accept / Reject / Change…** and add comments
-(saved in the browser); **Copy feedback** exports `key: CHOICE — comment`
+red/green highlights. Tick **Accept** and/or add a comment per entry
+(saved in the browser); **Copy feedback** exports `key: ACCEPT|NOT ACCEPTED — comment`
 lines to hand back to whoever applies the changes. Much easier to review than
 the raw `.bib` diff.
 

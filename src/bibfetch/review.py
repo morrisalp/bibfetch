@@ -1,7 +1,7 @@
 """Interactive HTML review of a bibliography change, from two rendered .bbl files.
 
 One card per changed reference (as the PDF prints it), word-level red/green
-highlights, Accept / Reject / Change + comment per entry (saved in the
+highlights, an Accept checkbox + comment per entry (saved in the
 browser), and a "Copy feedback" button that exports `key: CHOICE — comment`.
 """
 
@@ -40,7 +40,7 @@ def write_review(before_bbl: str, after_bbl: str, out_html: str, title: str = "B
         if a==b: continue
         n+=1; da,db=wdiff(a,b); kk=html.escape(k)
         rows.append(f'''<section data-key="{kk}"><div class="head"><h2>{n}. <code>{kk}</code></h2>
-    <div class="choice"><label><input type="radio" name="{kk}" value="ok"> Accept</label><label><input type="radio" name="{kk}" value="reject"> Reject</label><label><input type="radio" name="{kk}" value="edit"> Change…</label></div></div>
+    <label class="choice"><input type="checkbox"> Accept</label></div>
     <div class="row old"><span class="tag">before</span><p>{da}</p></div><div class="row new"><span class="tag">after</span><p>{db}</p></div>
     <textarea placeholder="Comment (optional)" rows="1"></textarea></section>''')
     page=f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -50,7 +50,7 @@ def write_review(before_bbl: str, after_bbl: str, out_html: str, title: str = "B
     body{{background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px 16px 120px}}
     h1{{font-size:22px;margin:0 0 4px}} .sub{{color:var(--muted);margin:0 0 20px}}
     section{{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:12px 16px;margin:0 0 14px}}
-    section.ok{{border-left-color:var(--acc)}} section.reject{{border-left-color:var(--rej)}} section.edit{{border-left-color:var(--chg)}}
+    section.ok{{border-left-color:var(--acc)}} section.note{{border-left-color:var(--chg)}}
     .head{{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}}
     h2{{font-size:14px;margin:0;color:var(--muted);font-weight:600}} code{{font-size:13px}}
     .choice{{display:flex;gap:14px;font-size:13px}} .choice label{{cursor:pointer}}
@@ -65,20 +65,20 @@ def write_review(before_bbl: str, after_bbl: str, out_html: str, title: str = "B
     </style></head><body><h1>{html.escape(title)}</h1>
     <p class="sub">Rendered references as the PDF shows them. {n} of {len(before)} cited entries changed; unchanged entries hidden. <del>red</del> = removed, <ins>green</ins> = added. Choices and comments are saved in this browser; use <b>Copy feedback</b> to paste them back to Claude.</p>
     {''.join(rows)}
-    <div class="bar"><span id="status"></span><button id="acceptRest">Accept all unmarked</button><button id="copy">Copy feedback</button></div>
+    <div class="bar"><span id="status"></span><button id="acceptRest">Accept all without comments</button><button id="copy">Copy feedback</button></div>
     <script>
     const KEY='bibreview:'+location.pathname; let st={{}};
     try{{st=JSON.parse(localStorage.getItem(KEY)||'{{}}')}}catch(e){{}}
     const secs=[...document.querySelectorAll('section')];
     function save(){{try{{localStorage.setItem(KEY,JSON.stringify(st))}}catch(e){{}} render()}}
-    function render(){{let c={{ok:0,reject:0,edit:0}};secs.forEach(s=>{{const v=(st[s.dataset.key]||{{}}).choice;s.className=v||'';if(v)c[v]++}});
-    document.getElementById('status').textContent=`${{c.ok}} accepted · ${{c.reject}} rejected · ${{c.edit}} change · ${{secs.length-c.ok-c.reject-c.edit}} unmarked`}}
+    function render(){{let a=0,cm=0;secs.forEach(s=>{{const e=st[s.dataset.key]||{{}};const c=(e.comment||'').trim();s.className=e.ok?'ok':(c?'note':'');if(e.ok)a++;if(c)cm++}});
+    document.getElementById('status').textContent=`${{a}} of ${{secs.length}} accepted · ${{cm}} with comments`}}
     secs.forEach(s=>{{const k=s.dataset.key,e=st[k]||{{}},ta=s.querySelector('textarea');
-     if(e.choice){{const r=s.querySelector(`input[value="${{e.choice}}"]`);if(r)r.checked=true}} ta.value=e.comment||'';
-     s.querySelectorAll('input').forEach(r=>r.addEventListener('change',()=>{{st[k]={{...(st[k]||{{}}),choice:r.value}};save()}}));
+     const cb=s.querySelector('input[type=checkbox]');cb.checked=!!e.ok; ta.value=e.comment||'';
+     cb.addEventListener('change',()=>{{st[k]={{...(st[k]||{{}}),ok:cb.checked}};save()}});
      ta.addEventListener('input',()=>{{st[k]={{...(st[k]||{{}}),comment:ta.value}};save()}});}});
-    document.getElementById('acceptRest').onclick=()=>{{secs.forEach(s=>{{const k=s.dataset.key;if(!(st[k]||{{}}).choice){{st[k]={{...(st[k]||{{}}),choice:'ok'}};s.querySelector('input[value=ok]').checked=true}}}});save()}};
-    document.getElementById('copy').onclick=async()=>{{const lines=secs.map(s=>{{const k=s.dataset.key,e=st[k]||{{}};return `${{k}}: ${{(e.choice||'UNMARKED').toUpperCase()}}${{e.comment?' — '+e.comment.trim():''}}`}});
+    document.getElementById('acceptRest').onclick=()=>{{secs.forEach(s=>{{const k=s.dataset.key,e=st[k]||{{}};if(!(e.comment||'').trim()){{st[k]={{...e,ok:true}};s.querySelector('input[type=checkbox]').checked=true}}}});save()}};
+    document.getElementById('copy').onclick=async()=>{{const lines=secs.map(s=>{{const k=s.dataset.key,e=st[k]||{{}};return `${{k}}: ${{e.ok?'ACCEPT':'NOT ACCEPTED'}}${{(e.comment||'').trim()?' — '+e.comment.trim():''}}`}});
      const t='Bib review feedback:\\n'+lines.join('\\n');try{{await navigator.clipboard.writeText(t);document.getElementById('status').textContent='Copied to clipboard'}}catch(e){{prompt('Copy this:',t)}}}};
     render();
     </script></body></html>"""
