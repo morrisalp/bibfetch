@@ -152,3 +152,8 @@ def test_review_bib(tmp_path):
     write_review(str(a), str(b), str(o), before_bib=str(ba), after_bib=str(bb))
     t = o.read_text()
     assert "<details><summary>BibTeX</summary>" in t and "inproceedings" in t and "nested" in t
+
+
+def test_review_clean_special_letters():
+    from bibfetch.review import clean
+    assert clean(r"Hanna Pamu{\l}a and Vida{\~n}a-Vila and Gro{\ss}") == "Hanna Pamuła and Vidaña-Vila and Groß"

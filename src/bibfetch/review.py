@@ -13,6 +13,9 @@ ACC={"'":"\u0301","`":"\u0300","\"":"\u0308","^":"\u0302","~":"\u0303","v":"\u03
 def clean(s):
     s=re.sub(r"\{\\(['`\"^~vc])\s*\{?(\w)\}?\}", lambda m:m.group(2)+ACC[m.group(1)], s)
     s=re.sub(r"\\(['`\"^~vc])\s*\{?(\w)\}?", lambda m:m.group(2)+ACC[m.group(1)], s)
+    # special letters: {\l} -> ł, {\o} -> ø, {\ss} -> ß, ... (was shown as "Pamu\la")
+    for cmd,ch in (("ss","ß"),("ae","æ"),("AE","Æ"),("oe","œ"),("OE","Œ"),("aa","å"),("AA","Å"),("o","ø"),("O","Ø"),("l","ł"),("L","Ł"),("i","ı")):
+        s=re.sub(r"\{\\"+cmd+r"\}|\\"+cmd+r"(?![A-Za-z])\s?", ch, s)
     s=unicodedata.normalize("NFC",s)
     s=s.replace("\\newblock","").replace("``","“").replace("''","”").replace("---","—").replace("--","–").replace("~"," ")
     s=re.sub(r"\{\\em\s+([^{}]*)\}", r"«\1»", s)
