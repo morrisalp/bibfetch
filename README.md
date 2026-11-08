@@ -82,6 +82,7 @@ than the online date Google Scholar shows.
 | Flag | Effect |
 |---|---|
 | `--keep-preprint` | don't swap arXiv/bioRxiv entries for published versions |
+| `--keep-etal` | `--tidy`: keep `and others` truncations instead of full author lists (for styles like IEEEbib that print every name; biblatex `maxbibnames` / IEEEtran's control entry truncate at build time instead) |
 | `--long-venues` | keep full proceedings names instead of `Proc. Interspeech` etc. |
 | `--author NAME` | require this first-author family name in title searches |
 | `--delay SEC` | pause between lookups in `--check` (default 1s) |
@@ -135,6 +136,8 @@ Known issues from the first real run (CallCleaner, 48 entries, Nov 2026):
 - **Journal year** follows Crossref's print date (often a year after the online
   date Scholar shows). Maybe an option to prefer the online year.
 - **Author merging** is heuristic (full names over initials, accents, particle
-  splits, `and others` truncation preserved). Edge cases: different author
+  splits). Edge cases: different author
   order, consortium authors.
+- **`--max-authors N`:** full list up to N, `and others` beyond (for IEEEbib-style
+  papers, without losing full lists elsewhere).
 

@@ -150,7 +150,7 @@ def cmd_tidy(args) -> int:
             continue
         e.key = it.key
         if it.fields.get("author") and e.fields.get("author"):
-            e.fields["author"] = merge_authors(it.fields["author"], e.fields["author"])
+            e.fields["author"] = merge_authors(it.fields["author"], e.fields["author"], keep_etal=args.keep_etal)
         if it.fields.get("title") and e.fields.get("title"):
             e.fields["title"] = merge_title_case(it.fields["title"], e.fields["title"])
         if not e.fields.get("year") and it.fields.get("year"):
@@ -192,6 +192,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--key", help="citation key to use (single query only)")
     p.add_argument("--author", help="first author's family name, to disambiguate a title search")
     p.add_argument("--keep-preprint", action="store_true", help="don't swap preprints for published versions")
+    p.add_argument("--keep-etal", action="store_true", help="with --tidy: keep 'and others' truncations instead of "
+                   "full registry author lists (for styles like IEEEbib that can't truncate)")
     p.add_argument("--long-venues", action="store_true", help="keep full conference names (no 'Proc. X')")
     p.add_argument("--delay", type=float, default=1.0, help="seconds between lookups in --check (default 1)")
     p.add_argument("-V", "--version", action="version", version=f"bibfetch {__version__}")

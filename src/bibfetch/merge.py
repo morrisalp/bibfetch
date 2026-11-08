@@ -43,12 +43,13 @@ def _fuller(a: str, b: str) -> str:
     return b if _has_accent(b) and not _has_accent(a) else a
 
 
-def merge_authors(original: str, fetched: str) -> str:
-    """Author-by-author merge. If the original was truncated with 'and others'
-    (rendered 'et al.'), keep the same truncation: a 4-page paper shouldn't
-    suddenly list 100+ authors."""
+def merge_authors(original: str, fetched: str, keep_etal: bool = False) -> str:
+    """Author-by-author merge. By default the registry's full author list
+    replaces an 'and others' truncation (full lists belong in the .bib; styles
+    like biblatex/IEEEtran truncate at build time). keep_etal=True keeps the
+    original truncation instead (for styles like IEEEbib that print every name)."""
     all_orig = _split_authors(original)
-    truncated = any(a.lower() == "others" for a in all_orig)
+    truncated = keep_etal and any(a.lower() == "others" for a in all_orig)
     orig = [a for a in all_orig if a.lower() != "others"]
     new = _split_authors(fetched)
     if truncated:

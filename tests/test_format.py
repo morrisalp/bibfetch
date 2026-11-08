@@ -116,7 +116,9 @@ def test_merge():
     assert merge_authors("Le Roux, Jonathan and Wisdom, Scott", "Roux, Jonathan Le and Wisdom, Scott") == "Le Roux, Jonathan and Wisdom, Scott"
     assert merge_authors("Mcewen, Ben", "McEwen, Ben") == "McEwen, Ben"
     assert merge_authors("Defossez, Alexandre", r"D{\'e}fossez, Alexandre") == r"D{\'e}fossez, Alexandre"
-    assert merge_authors("Kirillov, Alexander and Mintun, E and others", "Kirillov, Alexander and Mintun, Eric and Ravi, Nikhila") == "Kirillov, Alexander and Mintun, Eric and others"
+    full = "Kirillov, Alexander and Mintun, Eric and Ravi, Nikhila"
+    assert merge_authors("Kirillov, Alexander and Mintun, E and others", full) == full
+    assert merge_authors("Kirillov, Alexander and Mintun, E and others", full, keep_etal=True) == "Kirillov, Alexander and Mintun, Eric and others"
     assert merge_authors("Smith, John", "Jones, Mary") == "Jones, Mary"
     assert merge_title_case("Parallel WaveGAN: A fast model", "Parallel Wavegan: A Fast Model") == "Parallel {WaveGAN}: A Fast Model"
     assert not same_numbers("DNSMOS P. 835: A metric", "Dnsmos: A metric")
