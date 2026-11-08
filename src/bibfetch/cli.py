@@ -6,7 +6,7 @@
   bibfetch --check refs.bib                          # preprints with published versions
   bibfetch --check refs.bib --verify                 # also flag entries found nowhere
   bibfetch --tidy refs.bib -o refs.tidy.bib          # cleaned copy of the whole .bib
-  bibfetch --review before.bbl after.bbl -o review.html   # interactive review page
+  bibfetch --review before.bbl after.bbl --bib old.bib new.bib -o review.html   # review page
 """
 
 from __future__ import annotations
@@ -192,6 +192,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="HTML page comparing two rendered bibliographies (build the paper before/after "
                    "--tidy, copy main.bbl each time); needs -o")
     p.add_argument("--title", default="Bibliography review", help="with --review: page title")
+    p.add_argument("--bib", nargs=2, metavar=("BEFORE_BIB", "AFTER_BIB"),
+                   help="with --review: also show each entry's BibTeX source diff (collapsed)")
     p.add_argument("--verify", action="store_true", help="with --check: look up every entry, flag ones not found")
     p.add_argument("-o", "--output", help="with --check/--tidy: write output here instead of stdout")
     p.add_argument("--key", help="citation key to use (single query only)")
@@ -208,7 +210,8 @@ def main(argv: list[str] | None = None) -> int:
         if not args.output:
             p.error("--review needs -o OUT.html")
         from .review import write_review
-        n, total = write_review(args.review[0], args.review[1], args.output, args.title)
+        bibs = args.bib or (None, None)
+        n, total = write_review(args.review[0], args.review[1], args.output, args.title, *bibs)
         log(f"{n} of {total} cited entries changed -> {args.output}")
         return 0
     if args.tidy:

@@ -31,17 +31,41 @@ def wdiff(a,b):
             if A: oa.append(f'<del>{esc(A)}</del>')
             if B: ob.append(f'<ins>{esc(B)}</ins>')
     return "".join(oa),"".join(ob)
-def write_review(before_bbl: str, after_bbl: str, out_html: str, title: str = "Bibliography review") -> tuple[int, int]:
-    """Write the review page; returns (changed, total) cited entries."""
+def bib_entries(path: str | None) -> dict[str, str]:
+    """Raw BibTeX source of each entry, by key (for the optional BibTeX panel)."""
+    if not path:
+        return {}
+    t = open(path, encoding="utf-8").read()
+    out = {}
+    for m in re.finditer(r"@\w+\s*\{\s*([^,\s]+)\s*,", t):
+        depth, j = 0, t.index("{", m.start())
+        while j < len(t):
+            depth += {"{": 1, "}": -1}.get(t[j], 0)
+            if depth == 0:
+                break
+            j += 1
+        out[m.group(1)] = t[m.start():j + 1]
+    return out
+
+
+def write_review(before_bbl: str, after_bbl: str, out_html: str, title: str = "Bibliography review",
+                 before_bib: str | None = None, after_bib: str | None = None) -> tuple[int, int]:
+    """Write the review page; returns (changed, total) cited entries.
+    With before_bib/after_bib, each card gets a collapsed BibTeX source diff."""
     before=items(before_bbl); after=dict(items(after_bbl))
+    bib_a, bib_b = bib_entries(before_bib), bib_entries(after_bib)
     rows=[];n=0
     for k,a in before:
         b=after.get(k,"(missing)")
         if a==b: continue
         n+=1; da,db=wdiff(a,b); kk=html.escape(k)
+        bibhtml=""
+        if k in bib_a or k in bib_b:
+            ra,rb=wdiff(bib_a.get(k,"(not in before .bib)"),bib_b.get(k,"(not in after .bib)"))
+            bibhtml=f'<details><summary>BibTeX</summary><div class="bib"><div><span class="tag">before</span><pre>{ra}</pre></div><div><span class="tag">after</span><pre>{rb}</pre></div></div></details>' 
         rows.append(f'''<section data-key="{kk}"><div class="head"><h2>{n}. <code>{kk}</code></h2>
     <label class="choice"><input type="checkbox"> Accept</label></div>
-    <div class="row old"><span class="tag">before</span><p>{da}</p></div><div class="row new"><span class="tag">after</span><p>{db}</p></div>
+    <div class="row old"><span class="tag">before</span><p>{da}</p></div><div class="row new"><span class="tag">after</span><p>{db}</p></div>{bibhtml}
     <textarea placeholder="Comment (optional)" rows="1"></textarea></section>''')
     page=f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>{html.escape(title)}</title><style>
@@ -58,6 +82,9 @@ def write_review(before_bbl: str, after_bbl: str, out_html: str, title: str = "B
     .tag{{flex:0 0 52px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}}
     del{{background:var(--del);color:var(--delfg);text-decoration:line-through;border-radius:3px;padding:0 2px}}
     ins{{background:var(--ins);color:var(--insfg);text-decoration:none;border-radius:3px;padding:0 2px}}
+    details{{margin-top:6px;font-size:13px}} summary{{cursor:pointer;color:var(--muted)}}
+    .bib{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}} @media (max-width:700px){{.bib{{grid-template-columns:1fr}}}}
+    pre{{margin:2px 0 0;white-space:pre-wrap;word-break:break-word;font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}}
     textarea{{width:100%;box-sizing:border-box;margin-top:8px;font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);resize:vertical}}
     .bar{{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}}
     button{{font:inherit;font-size:14px;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}}

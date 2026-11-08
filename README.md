@@ -82,13 +82,15 @@ than the online date Google Scholar shows.
 Build the paper before and after `--tidy`, copying `main.bbl` each time, then:
 
 ```sh
-bibfetch --review before.bbl after.bbl -o review.html --title "My paper refs"
+bibfetch --review before.bbl after.bbl --bib refs.bib refs.tidy.bib \
+         -o review.html --title "My paper refs"
 open review.html
 ```
 
 One card per changed reference, as the PDF prints it, with word-level
 red/green highlights. Tick **Accept** and/or add a comment per entry
-(saved in the browser); **Copy feedback** exports `key: ACCEPT|NOT ACCEPTED — comment`
+(saved in the browser). With `--bib`, each card also has a collapsed
+**BibTeX** panel showing the source entry before/after. **Copy feedback** exports `key: ACCEPT|NOT ACCEPTED — comment`
 lines to hand back to whoever applies the changes. Much easier to review than
 the raw `.bib` diff.
 

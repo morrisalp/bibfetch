@@ -139,3 +139,16 @@ def test_review(tmp_path):
     assert write_review(str(a), str(b), str(o)) == (1, 2)
     t = o.read_text()
     assert "<del>" in t and "<ins>" in t and 'data-key="x"' in t and 'data-key="y"' not in t
+
+
+def test_review_bib(tmp_path):
+    from bibfetch.review import write_review
+    a = tmp_path / "a.bbl"; b = tmp_path / "b.bbl"; o = tmp_path / "r.html"
+    ba = tmp_path / "a.bib"; bb = tmp_path / "b.bib"
+    a.write_text(r"\bibitem{x} Ast, 2021.")
+    b.write_text(r"\bibitem{x} {AST}, 2021.")
+    ba.write_text("@article{x,\n  title={Ast: {nested} t},\n  year={2021}\n}\n")
+    bb.write_text("@inproceedings{x,\n  title = {{AST}: t},\n  year = {2021}\n}\n")
+    write_review(str(a), str(b), str(o), before_bib=str(ba), after_bib=str(bb))
+    t = o.read_text()
+    assert "<details><summary>BibTeX</summary>" in t and "inproceedings" in t and "nested" in t
