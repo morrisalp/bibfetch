@@ -74,8 +74,14 @@ Roux, Jonathan" over "Roux, Jonathan Le"), and your internal capitals
 ("WaveGAN" over "Wavegan"). Registry capitalization fixes still apply
 ("Mcewen" → "McEwen").
 
-Journal years follow the registry's print date, which can be a year later
-than the online date Google Scholar shows.
+**Journal years follow the issue (print) date** from the registry, which can
+be a year later than the online date that Google Scholar and IEEE Xplore's
+"Date of Publication" show. This is deliberate: once an article is assigned to
+a volume/issue, the convention is to cite the year of that volume (it's what
+makes volume/issue/pages findable); the online year is only for early-access
+articles without a volume yet. See the
+[IEEE Reference Guide](https://journals.ieeeauthorcenter.ieee.org/wp-content/uploads/sites/7/IEEE_Reference_Guide.pdf)
+and [this Academia.SE thread](https://academia.stackexchange.com/questions/16585/).
 
 ### Reviewing a tidy pass
 
@@ -150,8 +156,8 @@ Known issues from the first real run (CallCleaner, 48 entries, Nov 2026):
 - **DBLP** often answers with a bot check; ICML/ICLR/NeurIPS papers without DOIs
   then aren't found. Try the DBLP XML/SPARQL endpoints, or the ACL Anthology
   and OpenReview for those venues.
-- **Journal year** follows Crossref's print date (often a year after the online
-  date Scholar shows). Maybe an option to prefer the online year.
+- **Journal year:** maybe an `--online-year` option for venues/fields that
+  prefer it (default stays the issue year; see above).
 - **Author merging** is heuristic (full names over initials, accents, particle
   splits). Edge cases: different author
   order, consortium authors.
