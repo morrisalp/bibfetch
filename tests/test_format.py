@@ -116,7 +116,14 @@ def test_merge():
     assert merge_authors("Le Roux, Jonathan and Wisdom, Scott", "Roux, Jonathan Le and Wisdom, Scott") == "Le Roux, Jonathan and Wisdom, Scott"
     assert merge_authors("Mcewen, Ben", "McEwen, Ben") == "McEwen, Ben"
     assert merge_authors("Defossez, Alexandre", r"D{\'e}fossez, Alexandre") == r"D{\'e}fossez, Alexandre"
-    assert merge_authors("Kirillov, Alexander and others", "Kirillov, Alexander and Mintun, Eric") == "Kirillov, Alexander and Mintun, Eric"
+    assert merge_authors("Kirillov, Alexander and Mintun, E and others", "Kirillov, Alexander and Mintun, Eric and Ravi, Nikhila") == "Kirillov, Alexander and Mintun, Eric and others"
     assert merge_authors("Smith, John", "Jones, Mary") == "Jones, Mary"
     assert merge_title_case("Parallel WaveGAN: A fast model", "Parallel Wavegan: A Fast Model") == "Parallel {WaveGAN}: A Fast Model"
     assert not same_numbers("DNSMOS P. 835: A metric", "Dnsmos: A metric")
+
+
+def test_codes_and_month():
+    from bibfetch.bibtex import Entry
+    assert protect_title("DNSMOS P.835: A metric") == "{DNSMOS} {P}.835: A metric"
+    e = Entry("misc", "k", {"title": "x", "month": "jun"})
+    assert "month = jun" in e.render() and "{jun}" not in e.render()

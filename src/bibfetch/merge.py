@@ -44,8 +44,20 @@ def _fuller(a: str, b: str) -> str:
 
 
 def merge_authors(original: str, fetched: str) -> str:
-    orig = [a for a in _split_authors(original) if a.lower() != "others"]
+    """Author-by-author merge. If the original was truncated with 'and others'
+    (rendered 'et al.'), keep the same truncation: a 4-page paper shouldn't
+    suddenly list 100+ authors."""
+    all_orig = _split_authors(original)
+    truncated = any(a.lower() == "others" for a in all_orig)
+    orig = [a for a in all_orig if a.lower() != "others"]
     new = _split_authors(fetched)
+    if truncated:
+        new = new[:len(orig)]
+    merged = _merge_lists(orig, new, fetched)
+    return merged + (" and others" if truncated and merged != fetched else "")
+
+
+def _merge_lists(orig: list[str], new: list[str], fetched: str) -> str:
     out = []
     for i, fa in enumerate(new):
         if i >= len(orig):

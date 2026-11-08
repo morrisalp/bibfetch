@@ -114,3 +114,27 @@ DBLP-only records (e.g. ICLR/NeurIPS papers without DOIs) are used directly.
   preprints before camera-ready.
 - Short venue names cover common NLP/speech/ML/vision conferences (see
   `_VENUES` in `bibtex.py`); anything else keeps the registry's name.
+
+## TODO
+
+Known issues from the first real run (CallCleaner, 48 entries, Nov 2026):
+
+- **Speed:** `--tidy` makes several requests per entry and takes a few minutes
+  on ~50 entries. Cache registry responses on disk and/or run lookups in
+  parallel (Crossref allows modest concurrency).
+- **Multi-word proper names** in titles ("SAM Audio" → "{SAM} audio") aren't
+  braced as a unit; only the acronym is. Could reuse the original entry's
+  braces, or brace a capitalized word that follows a protected acronym.
+- **Non-registry entries** (ITU/ISO standards, Zenodo software, websites) get
+  formatting-only cleanup; their entry types (`@software`, fake `@article` for
+  standards) still need fixing by hand. Zenodo/DataCite DOIs could be fetched
+  from DataCite's API.
+- **DBLP** often answers with a bot check; ICML/ICLR/NeurIPS papers without DOIs
+  then aren't found. Try the DBLP XML/SPARQL endpoints, or the ACL Anthology
+  and OpenReview for those venues.
+- **Journal year** follows Crossref's print date (often a year after the online
+  date Scholar shows). Maybe an option to prefer the online year.
+- **Author merging** is heuristic (full names over initials, accents, particle
+  splits, `and others` truncation preserved). Edge cases: different author
+  order, consortium authors.
+

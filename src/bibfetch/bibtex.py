@@ -11,6 +11,8 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
+_MONTHS = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"}
+
 # ---------------------------------------------------------------- data model
 
 
@@ -31,7 +33,11 @@ class Entry:
         width = max(len(n) for n in names) if names else 0
         lines = [f"@{self.type}{{{self.key},"]
         for n in names:
-            lines.append(f"  {n.ljust(width)} = {{{self.fields[n]}}},")
+            v = self.fields[n]
+            if n == "month" and v.lower() in _MONTHS:  # BibTeX macro: jun -> "June"
+                lines.append(f"  {n.ljust(width)} = {v.lower()},")
+            else:
+                lines.append(f"  {n.ljust(width)} = {{{v}}},")
         lines[-1] = lines[-1].rstrip(",")
         lines.append("}")
         return "\n".join(lines)
@@ -111,6 +117,8 @@ def protect_title(title: str) -> str:
     """
     if "{" in title:  # already hand-protected; don't touch
         return title
+    # standard/version codes: "P.835", "G.711" (single capital + dot + digits)
+    title = re.sub(r"\b([A-Z])\.(\d+)", r"{\1}.\2", title)
 
     def repl(m: re.Match) -> str:
         w = m.group(0)
