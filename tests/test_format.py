@@ -129,3 +129,13 @@ def test_codes_and_month():
     assert protect_title("DNSMOS P.835: A metric") == "{DNSMOS} {P}.835: A metric"
     e = Entry("misc", "k", {"title": "x", "month": "jun"})
     assert "month = jun" in e.render() and "{jun}" not in e.render()
+
+
+def test_review(tmp_path):
+    from bibfetch.review import write_review
+    a = tmp_path / "a.bbl"; b = tmp_path / "b.bbl"; o = tmp_path / "r.html"
+    a.write_text(r"\begin{thebibliography}{1}\bibitem{x} Ast: audio, {\em arXiv}, 2021.\bibitem{y} Same.\end{thebibliography}")
+    b.write_text(r"\begin{thebibliography}{1}\bibitem{x} {AST}: audio, {\em Proc. Interspeech}, 2021.\bibitem{y} Same.\end{thebibliography}")
+    assert write_review(str(a), str(b), str(o)) == (1, 2)
+    t = o.read_text()
+    assert "<del>" in t and "<ins>" in t and 'data-key="x"' in t and 'data-key="y"' not in t

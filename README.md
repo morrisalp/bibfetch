@@ -77,6 +77,21 @@ Roux, Jonathan" over "Roux, Jonathan Le"), and your internal capitals
 Journal years follow the registry's print date, which can be a year later
 than the online date Google Scholar shows.
 
+### Reviewing a tidy pass
+
+Build the paper before and after `--tidy`, copying `main.bbl` each time, then:
+
+```sh
+bibfetch --review before.bbl after.bbl -o review.html --title "My paper refs"
+open review.html
+```
+
+One card per changed reference, as the PDF prints it, with word-level
+red/green highlights. Mark each **Accept / Reject / Change…** and add comments
+(saved in the browser); **Copy feedback** exports `key: CHOICE — comment`
+lines to hand back to whoever applies the changes. Much easier to review than
+the raw `.bib` diff.
+
 ### Options
 
 | Flag | Effect |
@@ -140,14 +155,6 @@ Known issues from the first real run (CallCleaner, 48 entries, Nov 2026):
   order, consortium authors.
 - **`--max-authors N`:** full list up to N, `and others` beyond (for IEEEbib-style
   papers, without losing full lists elsewhere).
-- **Rendered review diff (`--review`):** after `--tidy`, build the paper before/after
-  and write an HTML page comparing the *rendered* references (`.bbl`, as the PDF
-  shows them), one card per changed entry with word-level red/green highlights,
-  LaTeX converted to readable text. Prototype from the CallCleaner pass (Nov 2026):
-  diff two `.bbl` files with `difflib` on word tokens. Should be the default way to
-  review a tidy pass: the raw `.bib` diff is too noisy.
-  Each card has Accept / Reject / Change… plus a comment box (saved in the
-  browser), and a **Copy feedback** button that exports `key: CHOICE — comment`
-  lines to paste back to the assistant, which then applies them. Working
-  prototype: `prototypes/bbl_review.py BEFORE.bbl AFTER.bbl OUT.html [title]`.
+- **`--review` automation:** build the paper before/after itself (latexmk) instead of
+  taking two `.bbl` files; feed the copied feedback back in to apply accepts/rejects.
 

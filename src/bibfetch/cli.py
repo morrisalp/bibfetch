@@ -6,6 +6,7 @@
   bibfetch --check refs.bib                          # preprints with published versions
   bibfetch --check refs.bib --verify                 # also flag entries found nowhere
   bibfetch --tidy refs.bib -o refs.tidy.bib          # cleaned copy of the whole .bib
+  bibfetch --review before.bbl after.bbl -o review.html   # interactive review page
 """
 
 from __future__ import annotations
@@ -187,6 +188,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--check", metavar="BIB", help="report preprint entries in BIB that have published versions")
     p.add_argument("--tidy", metavar="BIB", help="write a cleaned copy of BIB: re-fetch every entry from registries "
                    "(same keys/order), formatting-only cleanup for entries not found")
+    p.add_argument("--review", nargs=2, metavar=("BEFORE_BBL", "AFTER_BBL"),
+                   help="HTML page comparing two rendered bibliographies (build the paper before/after "
+                   "--tidy, copy main.bbl each time); needs -o")
+    p.add_argument("--title", default="Bibliography review", help="with --review: page title")
     p.add_argument("--verify", action="store_true", help="with --check: look up every entry, flag ones not found")
     p.add_argument("-o", "--output", help="with --check/--tidy: write output here instead of stdout")
     p.add_argument("--key", help="citation key to use (single query only)")
@@ -199,6 +204,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("-V", "--version", action="version", version=f"bibfetch {__version__}")
     args = p.parse_args(argv)
 
+    if args.review:
+        if not args.output:
+            p.error("--review needs -o OUT.html")
+        from .review import write_review
+        n, total = write_review(args.review[0], args.review[1], args.output, args.title)
+        log(f"{n} of {total} cited entries changed -> {args.output}")
+        return 0
     if args.tidy:
         return cmd_tidy(args)
     if args.check:
